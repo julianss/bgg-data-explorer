@@ -1,5 +1,5 @@
 <script>
-  import { onMount } from 'svelte'
+  import { onMount, tick } from 'svelte'
   import * as echarts from 'echarts'
   import { fetchJSON } from '../lib/api.js'
 
@@ -50,6 +50,8 @@
       error = e.message
     } finally {
       loading = false
+      await tick()
+      renderChart()
     }
   })
 
