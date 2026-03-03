@@ -88,6 +88,11 @@ def create_schema(conn):
             designer_id INTEGER REFERENCES designers(id),
             PRIMARY KEY (game_id, designer_id)
         );
+
+        CREATE TABLE IF NOT EXISTS metadata (
+            key TEXT PRIMARY KEY,
+            value TEXT
+        );
     """)
 
 
@@ -279,6 +284,14 @@ def main():
             time.sleep(5)
 
     print(f"\nDone! Ingested {total_done} games total.")
+
+    # Record snapshot date
+    from datetime import date
+    conn.execute(
+        "INSERT OR REPLACE INTO metadata (key, value) VALUES ('snapshot_date', ?)",
+        (date.today().isoformat(),)
+    )
+    conn.commit()
 
     # Quick summary
     for table in ["games", "mechanics", "categories", "families", "designers"]:

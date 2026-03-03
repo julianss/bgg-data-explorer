@@ -51,6 +51,15 @@ def float_param(name, default=None):
         return default
 
 
+@app.route("/api/meta")
+def api_meta():
+    db = get_db()
+    row = db.execute("SELECT value FROM metadata WHERE key = 'snapshot_date'").fetchone()
+    snapshot_date = row[0] if row else None
+    game_count = db.execute("SELECT COUNT(*) FROM games").fetchone()[0]
+    return jsonify({"snapshot_date": snapshot_date, "game_count": game_count})
+
+
 def build_game_filter(prefix="g"):
     """Build WHERE clauses + params from standard filter query args."""
     clauses = []
