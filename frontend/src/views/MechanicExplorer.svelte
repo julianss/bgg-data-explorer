@@ -166,13 +166,17 @@
     const names = data.mechanics.map(m => m.name)
     const n = names.length
 
-    // Build heatmap data: [x, y, value]
+    // Build heatmap data: [x, y, value] — skip diagonal (self-pairs)
     let heatData = []
     let maxVal = 0
     for (let i = 0; i < n; i++) {
       for (let j = 0; j < n; j++) {
+        if (i === j) {
+          heatData.push([j, i, '-'])
+          continue
+        }
         const v = data.matrix[i][j]
-        if (v > maxVal && i !== j) maxVal = v
+        if (v > maxVal) maxVal = v
         heatData.push([j, i, v])
       }
     }
@@ -180,6 +184,7 @@
     chart.setOption({
       tooltip: {
         formatter: (p) => {
+          if (p.data[2] === '-') return null
           const x = names[p.data[0]]
           const y = names[p.data[1]]
           return `${y} + ${x}: ${p.data[2]} games`
