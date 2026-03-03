@@ -1,14 +1,12 @@
 <script>
-  import MechanicExplorer from './views/MechanicExplorer.svelte'
+  import MechanicDashboard from './views/MechanicDashboard.svelte'
   import MarketOpportunity from './views/MarketOpportunity.svelte'
-  import TrendDashboard from './views/TrendDashboard.svelte'
 
-  let activeTab = 'trends'
+  let activeTab = 'dashboard'
 
   const tabs = [
-    { id: 'trends', label: 'Trend Dashboard' },
+    { id: 'dashboard', label: 'Mechanic Dashboard' },
     { id: 'opportunity', label: 'Market Opportunities' },
-    { id: 'mechanics', label: 'Mechanic Explorer' },
   ]
 </script>
 
@@ -30,12 +28,10 @@
   {/each}
 </div>
 
-{#if activeTab === 'mechanics'}
-  <MechanicExplorer />
+{#if activeTab === 'dashboard'}
+  <MechanicDashboard />
 {:else if activeTab === 'opportunity'}
   <MarketOpportunity />
-{:else if activeTab === 'trends'}
-  <TrendDashboard />
 {/if}
 
 <footer>

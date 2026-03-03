@@ -402,6 +402,14 @@ footer {
   font-size: 0.75rem;
 }
 
+.tag.clickable {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.tag.clickable:hover {
+  background: var(--accent2);
+}
+
 .top-games-list {
   max-height: 200px;
   overflow-y: auto;
