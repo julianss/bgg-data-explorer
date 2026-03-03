@@ -13,5 +13,8 @@ node_modules/
 # Build
 frontend/dist/
 
+# Deploy
+deploy.sh
+
 # Claude Code
 .claude/

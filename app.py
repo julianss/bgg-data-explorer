@@ -205,6 +205,80 @@ def api_mechanic_cooccurrence():
     })
 
 
+@app.route("/api/mechanic-stats/<int:mechanic_id>")
+def api_mechanic_stats(mechanic_id):
+    db = get_db()
+    # Basic info
+    mech = db.execute("SELECT id, name FROM mechanics WHERE id = ?", [mechanic_id]).fetchone()
+    if not mech:
+        return jsonify({"error": "Not found"}), 404
+
+    game_count = db.execute(
+        "SELECT COUNT(*) as c FROM game_mechanics WHERE mechanic_id = ?", [mechanic_id]
+    ).fetchone()["c"]
+
+    # Aggregate stats across games with this mechanic
+    stats = db.execute("""
+        SELECT
+            ROUND(AVG(g.average), 2) as avg_rating,
+            ROUND(AVG(g.weight), 2) as avg_weight,
+            ROUND(AVG(g.users_rated), 0) as avg_users_rated,
+            MIN(g.year_published) as earliest_year,
+            MAX(g.year_published) as latest_year,
+            ROUND(AVG(g.playing_time), 0) as avg_playtime
+        FROM games g
+        JOIN game_mechanics gm ON gm.game_id = g.id
+        WHERE gm.mechanic_id = ?
+    """, [mechanic_id]).fetchone()
+
+    # Top 10 games by bayes_average
+    top_games = db.execute("""
+        SELECT g.id, g.name, g.year_published, g.average, g.users_rated, g.weight, g.rank
+        FROM games g
+        JOIN game_mechanics gm ON gm.game_id = g.id
+        WHERE gm.mechanic_id = ?
+        ORDER BY g.bayes_average DESC
+        LIMIT 10
+    """, [mechanic_id]).fetchall()
+
+    # Top co-occurring mechanics
+    co_mechs = db.execute("""
+        SELECT m.name, COUNT(*) as cnt
+        FROM game_mechanics gm1
+        JOIN game_mechanics gm2 ON gm2.game_id = gm1.game_id AND gm2.mechanic_id != gm1.mechanic_id
+        JOIN mechanics m ON m.id = gm2.mechanic_id
+        WHERE gm1.mechanic_id = ?
+        GROUP BY gm2.mechanic_id
+        ORDER BY cnt DESC
+        LIMIT 8
+    """, [mechanic_id]).fetchall()
+
+    # Games per year (last 30 years)
+    yearly = db.execute("""
+        SELECT g.year_published as year, COUNT(*) as cnt
+        FROM games g
+        JOIN game_mechanics gm ON gm.game_id = g.id
+        WHERE gm.mechanic_id = ? AND g.year_published >= 1995
+        GROUP BY g.year_published
+        ORDER BY g.year_published
+    """, [mechanic_id]).fetchall()
+
+    return jsonify({
+        "id": mech["id"],
+        "name": mech["name"],
+        "game_count": game_count,
+        "avg_rating": stats["avg_rating"],
+        "avg_weight": stats["avg_weight"],
+        "avg_users_rated": int(stats["avg_users_rated"] or 0),
+        "avg_playtime": int(stats["avg_playtime"] or 0),
+        "earliest_year": stats["earliest_year"],
+        "latest_year": stats["latest_year"],
+        "top_games": rows_to_dicts(top_games),
+        "co_mechanics": rows_to_dicts(co_mechs),
+        "yearly": rows_to_dicts(yearly),
+    })
+
+
 @app.route("/api/mechanic-pair-games")
 def api_mechanic_pair_games():
     db = get_db()
