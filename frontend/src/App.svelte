@@ -5,7 +5,7 @@
   let activeTab = 'dashboard'
 
   const tabs = [
-    { id: 'dashboard', label: 'Mechanic Dashboard' },
+    { id: 'dashboard', label: 'Mechanics Explorer' },
     { id: 'opportunity', label: 'Market Opportunities' },
   ]
 </script>
