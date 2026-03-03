@@ -4,7 +4,8 @@ An interactive dashboard for analyzing the BoardGameGeek database — exploring 
 
 **Live demo:** [solojulian.dev/bgg](https://solojulian.dev/bgg/)
 
-[![Powered by BGG](frontend/public/bgg-logo.png)](https://boardgamegeek.com)
+<img width="1381" height="823" alt="image" src="https://github.com/user-attachments/assets/1e4c9806-ef35-4497-b560-d36eeee2c437" />
+
 
 ## Features
 
@@ -102,3 +103,5 @@ The database (`bgg.db`) is **not included** in this repo. BGG's [XML API Terms o
 ## License
 
 Data sourced from [BoardGameGeek](https://boardgamegeek.com) via their XML API. All game data belongs to BGG and its contributors.
+
+[![Powered by BGG](frontend/public/bgg-logo.png)](https://boardgamegeek.com)
