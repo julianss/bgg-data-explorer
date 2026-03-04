@@ -3,6 +3,7 @@
   import { fetchJSON } from './lib/api.js'
   import MechanicDashboard from './views/MechanicDashboard.svelte'
   import MarketOpportunity from './views/MarketOpportunity.svelte'
+  import About from './views/About.svelte'
 
   let activeTab = 'dashboard'
   let snapshotDate = ''
@@ -10,6 +11,7 @@
   const tabs = [
     { id: 'dashboard', label: 'Mechanics Explorer' },
     { id: 'opportunity', label: 'Market Opportunities' },
+    { id: 'about', label: 'About' },
   ]
 
   onMount(async () => {
@@ -46,6 +48,10 @@
 {:else if activeTab === 'opportunity'}
   <MarketOpportunity />
 {/if}
+
+<div class:hidden={activeTab !== 'about'}>
+  <About />
+</div>
 
 <footer>
   {#if snapshotDate}
