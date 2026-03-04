@@ -73,8 +73,8 @@
     ? itemList.filter(m =>
         m.name.toLowerCase().includes(searchText.toLowerCase()) &&
         !selectedItems.find(s => s.id === m.id)
-      ).slice(0, 20)
-    : []
+      )
+    : itemList.filter(m => !selectedItems.find(s => s.id === m.id))
 
   onMount(async () => {
     try {
@@ -266,7 +266,6 @@
       selectedMechanicId = mech.id
       mechSearchText = mech.name
       loadMechanicStats()
-      addToTrendChart(mech)
     }
   }
 
@@ -289,10 +288,18 @@
 
   function handleMechanicDropdownChange() {
     loadMechanicStats()
-    if (selectedMechanicId) {
-      const mech = mechanics.find(m => String(m.id) === String(selectedMechanicId))
-      if (mech) addToTrendChart(mech)
-    }
+  }
+
+  function clearMechanicSelection() {
+    selectedMechanicId = ''
+    mechSearchText = ''
+    mechStats = null
+  }
+
+  function addSelectedMechanicToTrend() {
+    if (!selectedMechanicId) return
+    const mech = mechanics.find(m => String(m.id) === String(selectedMechanicId))
+    if (mech) addToTrendChart(mech)
   }
 
   function handleCoMechClick(cm) {
@@ -458,7 +465,7 @@
             on:change={() => renderPieChart()}>
         </div>
       </div>
-      <p class="help-text">How many games use each mechanic. Larger slices mean the mechanic appears in more games. Click a slice to see details and add it to the trend chart.</p>
+      <p class="help-text">How many games use each mechanic. Larger slices mean the mechanic appears in more games. Click a slice to see its details.</p>
       <div bind:this={pieEl} style="width: 100%; height: 400px;"></div>
     </div>
 
@@ -477,6 +484,9 @@
             on:input={() => mechDropdownOpen = true}
             autocomplete="off"
           />
+          {#if mechSearchText}
+            <button class="clear-btn" on:click={clearMechanicSelection} title="Clear selection">&times;</button>
+          {/if}
           {#if mechDropdownOpen}
             <!-- svelte-ignore a11y-click-events-have-key-events -->
             <div class="searchable-backdrop" on:click={() => mechDropdownOpen = false}></div>
@@ -500,24 +510,23 @@
         <div class="loading">Loading stats...</div>
       {:else if mechStats}
         <div class="stats-grid">
-          <div class="stat-box">
+          <div class="stat-box" title="Total number of games that use this mechanic">
             <span class="stat-value">{mechStats.game_count.toLocaleString()}</span>
             <span class="stat-label">Games</span>
           </div>
-          <div class="stat-box">
+          <div class="stat-box" title="Average user rating (out of 10) across all games with this mechanic">
             <span class="stat-value">{mechStats.avg_rating}</span>
             <span class="stat-label">Avg Rating</span>
           </div>
-          <div class="stat-box">
+          <div class="stat-box" title="Average complexity on a 1-5 scale, rated by BGG users based on how difficult the game is to understand and play">
             <span class="stat-value">{mechStats.avg_weight}</span>
-            <span class="stat-label">Avg Weight</span>
+            <span class="stat-label">Avg Complexity</span>
           </div>
-          <div class="stat-box">
+          <div class="stat-box" title="Average playing time in minutes across all games with this mechanic">
             <span class="stat-value">{mechStats.avg_playtime} min</span>
             <span class="stat-label">Avg Playtime</span>
           </div>
         </div>
-
         {#if mechStats.description}
           <h4 style="margin: 0.75rem 0 0.25rem; color: var(--text-dim);">Description</h4>
           <p class="mechanic-description">{decodeEntities(mechStats.description)}</p>
@@ -525,6 +534,7 @@
 
         <h4 style="margin: 0.75rem 0 0.25rem; color: var(--text-dim);">Games per Year</h4>
         <div bind:this={miniChartEl} style="width: 100%; height: 150px;"></div>
+        <button class="btn" style="margin-top: 0.5rem;" on:click={addSelectedMechanicToTrend}>Add to trend graph</button>
 
         <h4 style="margin: 0.75rem 0 0.25rem; color: var(--text-dim);">Top Co-occurring Mechanics</h4>
         <div class="co-mechs">
@@ -565,20 +575,32 @@
       </div>
     </div>
 
-    <div style="display: flex; gap: 1rem; align-items: start; margin-bottom: 0.75rem;">
-      <div class="tag-picker">
+    <div style="margin-bottom: 0.75rem; max-width: 350px;">
+      <div class="searchable-select">
         <input
           type="text"
+          placeholder="Search {mode}..."
           bind:value={searchText}
           on:focus={() => showDropdown = true}
-          on:blur={() => setTimeout(() => showDropdown = false, 200)}
-          placeholder="Search {mode}..."
-        >
-        {#if showDropdown && filtered.length}
-          <div class="dropdown">
+          on:input={() => showDropdown = true}
+          autocomplete="off"
+        />
+        {#if searchText}
+          <button class="clear-btn" on:click={() => { searchText = ''; showDropdown = false }} title="Clear search">&times;</button>
+        {/if}
+        {#if showDropdown}
+          <!-- svelte-ignore a11y-click-events-have-key-events -->
+          <div class="searchable-backdrop" on:click={() => showDropdown = false}></div>
+          <div class="searchable-options">
             {#each filtered as item}
-              <div on:mousedown={() => addItem(item)}>{item.name} ({item.game_count})</div>
+              <button
+                class="searchable-option"
+                on:click={() => addItem(item)}
+              >{item.name} ({item.game_count})</button>
             {/each}
+            {#if filtered.length === 0}
+              <div class="searchable-option dim">No matches</div>
+            {/if}
           </div>
         {/if}
       </div>
@@ -600,6 +622,34 @@
       <div class="loading">Updating chart...</div>
     {/if}
   </div>
+
+  <!-- Rising/Falling mover cards -->
+  {#if overview}
+    <div class="card">
+      <h2 class="rising">Rising Mechanics (2020-2025 vs 2015-2019)</h2>
+      <p class="help-text">Mechanics that are being used in a larger share of new games compared to previous years. A higher percentage means the mechanic is becoming more popular among game designers. Click any card to add it to the trend chart above.</p>
+      <div class="mover-cards">
+        {#each overview.rising as mover}
+          <div class="mover-card" on:click={() => addToTrendChart(mover)}>
+            <div class="name">{mover.name}</div>
+            <div class="change rising">+{mover.share_change.toFixed(2)}%</div>
+          </div>
+        {/each}
+      </div>
+    </div>
+    <div class="card">
+      <h2 class="falling">Declining Mechanics</h2>
+      <p class="help-text">Mechanics that are appearing in a smaller share of new games compared to previous years. This doesn't mean they're bad — just that designers are using them less often in recent titles.</p>
+      <div class="mover-cards">
+        {#each overview.falling as mover}
+          <div class="mover-card" on:click={() => addToTrendChart(mover)}>
+            <div class="name">{mover.name}</div>
+            <div class="change falling">{mover.share_change.toFixed(2)}%</div>
+          </div>
+        {/each}
+      </div>
+    </div>
+  {/if}
 
   <!-- Co-occurrence heatmap -->
   <div class="card">
@@ -648,34 +698,6 @@
     {/if}
   </div>
 
-  <!-- Rising/Falling mover cards -->
-  {#if overview}
-    <div class="card">
-      <h2 class="rising">Rising Mechanics (2020-2025 vs 2015-2019)</h2>
-      <p class="help-text">Mechanics that are being used in a larger share of new games compared to previous years. A higher percentage means the mechanic is becoming more popular among game designers. Click any card to add it to the trend chart above.</p>
-      <div class="mover-cards">
-        {#each overview.rising as mover}
-          <div class="mover-card" on:click={() => addToTrendChart(mover)}>
-            <div class="name">{mover.name}</div>
-            <div class="change rising">+{mover.share_change.toFixed(2)}%</div>
-          </div>
-        {/each}
-      </div>
-    </div>
-    <div class="card">
-      <h2 class="falling">Declining Mechanics</h2>
-      <p class="help-text">Mechanics that are appearing in a smaller share of new games compared to previous years. This doesn't mean they're bad — just that designers are using them less often in recent titles.</p>
-      <div class="mover-cards">
-        {#each overview.falling as mover}
-          <div class="mover-card" on:click={() => addToTrendChart(mover)}>
-            <div class="name">{mover.name}</div>
-            <div class="change falling">{mover.share_change.toFixed(2)}%</div>
-          </div>
-        {/each}
-      </div>
-    </div>
-  {/if}
-
   <!-- Drill-down modal -->
   {#if drillGames !== null}
     <div class="modal-backdrop" on:click={closeDrill} on:keydown={(e) => e.key === 'Escape' && closeDrill()}>
@@ -694,7 +716,7 @@
                 <th>Year</th>
                 <th>Rating</th>
                 <th>Voters</th>
-                <th>Weight</th>
+                <th>Complexity</th>
               </tr>
             </thead>
             <tbody>

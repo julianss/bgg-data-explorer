@@ -299,7 +299,7 @@
               <th>Year</th>
               <th>Rating</th>
               <th>Voters</th>
-              <th>Weight</th>
+              <th>Complexity</th>
             </tr>
           </thead>
           <tbody>

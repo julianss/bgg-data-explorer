@@ -395,13 +395,31 @@ footer {
 
 .searchable-select input {
   width: 100%;
-  padding: 0.4rem 0.6rem;
+  padding: 0.4rem 1.8rem 0.4rem 0.6rem;
   background: var(--surface2);
   color: var(--text);
   border: 1px solid var(--border);
   border-radius: 6px;
   font-size: 0.85rem;
   box-sizing: border-box;
+}
+
+.clear-btn {
+  position: absolute;
+  right: 0.4rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0 0.2rem;
+  line-height: 1;
+}
+
+.clear-btn:hover {
+  color: var(--text);
 }
 
 .searchable-backdrop {
