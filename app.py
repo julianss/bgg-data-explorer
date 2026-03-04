@@ -218,7 +218,7 @@ def api_mechanic_cooccurrence():
 def api_mechanic_stats(mechanic_id):
     db = get_db()
     # Basic info
-    mech = db.execute("SELECT id, name FROM mechanics WHERE id = ?", [mechanic_id]).fetchone()
+    mech = db.execute("SELECT id, name, summary FROM mechanics WHERE id = ?", [mechanic_id]).fetchone()
     if not mech:
         return jsonify({"error": "Not found"}), 404
 
@@ -275,6 +275,7 @@ def api_mechanic_stats(mechanic_id):
     return jsonify({
         "id": mech["id"],
         "name": mech["name"],
+        "description": mech["summary"],
         "game_count": game_count,
         "avg_rating": stats["avg_rating"],
         "avg_weight": stats["avg_weight"],

@@ -389,6 +389,75 @@ footer {
   text-transform: uppercase;
 }
 
+.searchable-select {
+  position: relative;
+}
+
+.searchable-select input {
+  width: 100%;
+  padding: 0.4rem 0.6rem;
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  box-sizing: border-box;
+}
+
+.searchable-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+}
+
+.searchable-options {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 240px;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  z-index: 100;
+  margin-top: 2px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.searchable-option {
+  display: block;
+  width: 100%;
+  padding: 0.35rem 0.6rem;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 0.82rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.searchable-option:hover {
+  background: var(--surface2);
+}
+
+.searchable-option.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.searchable-option.dim {
+  color: var(--text-dim);
+  cursor: default;
+}
+
+.mechanic-description {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  line-height: 1.5;
+  margin: 0.5rem 0 0.25rem;
+}
+
 .co-mechs {
   display: flex;
   flex-wrap: wrap;

@@ -54,6 +54,19 @@
   let mechStatsLoading = false
   let miniChartEl
   let miniChart
+  let mechSearchText = ''
+  let mechDropdownOpen = false
+
+  $: filteredMechanics = mechSearchText
+    ? mechanics.filter(m => m.name.toLowerCase().includes(mechSearchText.toLowerCase()))
+    : mechanics
+
+  function decodeEntities(str) {
+    if (!str) return ''
+    const el = document.createElement('textarea')
+    el.innerHTML = str
+    return el.value
+  }
 
   $: itemList = mode === 'mechanics' ? mechanics : categories
   $: filtered = searchText
@@ -251,6 +264,7 @@
     const mech = mechanics.find(m => m.name === params.name)
     if (mech) {
       selectedMechanicId = mech.id
+      mechSearchText = mech.name
       loadMechanicStats()
       addToTrendChart(mech)
     }
@@ -454,12 +468,32 @@
       </div>
       <div class="filter-group" style="margin-bottom: 0.75rem;">
         <label>Select a mechanic</label>
-        <select bind:value={selectedMechanicId} on:change={handleMechanicDropdownChange} style="width: 100%">
-          <option value="">-- Choose --</option>
-          {#each mechanics as m}
-            <option value={m.id}>{m.name} ({m.game_count})</option>
-          {/each}
-        </select>
+        <div class="searchable-select">
+          <input
+            type="text"
+            placeholder="Search mechanics..."
+            bind:value={mechSearchText}
+            on:focus={() => mechDropdownOpen = true}
+            on:input={() => mechDropdownOpen = true}
+            autocomplete="off"
+          />
+          {#if mechDropdownOpen}
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <div class="searchable-backdrop" on:click={() => mechDropdownOpen = false}></div>
+            <div class="searchable-options">
+              {#each filteredMechanics as m}
+                <button
+                  class="searchable-option"
+                  class:active={String(m.id) === String(selectedMechanicId)}
+                  on:click={() => { selectedMechanicId = m.id; mechSearchText = m.name; mechDropdownOpen = false; handleMechanicDropdownChange() }}
+                >{m.name} ({m.game_count})</button>
+              {/each}
+              {#if filteredMechanics.length === 0}
+                <div class="searchable-option dim">No matches</div>
+              {/if}
+            </div>
+          {/if}
+        </div>
       </div>
 
       {#if mechStatsLoading}
@@ -483,6 +517,11 @@
             <span class="stat-label">Avg Playtime</span>
           </div>
         </div>
+
+        {#if mechStats.description}
+          <h4 style="margin: 0.75rem 0 0.25rem; color: var(--text-dim);">Description</h4>
+          <p class="mechanic-description">{decodeEntities(mechStats.description)}</p>
+        {/if}
 
         <h4 style="margin: 0.75rem 0 0.25rem; color: var(--text-dim);">Games per Year</h4>
         <div bind:this={miniChartEl} style="width: 100%; height: 150px;"></div>
