@@ -233,8 +233,8 @@
 
 {#if data.length}
   <div class="card" style="padding: 0.5rem;">
-    <p style="color: var(--text-dim); font-size: 0.8rem; margin-bottom: 0.5rem;">
-      Grouped by category. Size = opportunity score, brighter pink = higher avg rating. Click a cell for game list.
+    <p class="help-text">
+      Each rectangle is a mechanic + category combination. Bigger rectangles have a higher opportunity score — meaning the combination is well-rated but has fewer games, suggesting room for new designs. Brighter pink means higher average rating. Click any cell to see the games in that combination.
     </p>
     <div class="chart-scroll">
       <div bind:this={chartEl} style="width: {Math.max(1200, chartItemCount * 18)}px; height: {Math.max(800, chartItemCount * 12)}px; flex-shrink: 0;"></div>
@@ -244,6 +244,7 @@
   <div class="card">
     <div class="flex-between" style="margin-bottom: 0.75rem;">
       <h2>Top Opportunities</h2>
+      <p class="help-text" style="margin: 0;">Mechanic + category combos ranked by opportunity score. A high score means the combination has strong ratings but relatively few games — a potential gap in the market. Click a row to see the games.</p>
       <div class="filter-group">
         <label>Show top</label>
         <select bind:value={showTop}>

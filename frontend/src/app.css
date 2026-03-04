@@ -427,3 +427,12 @@ footer {
   color: var(--text-dim);
   margin-left: 0.3rem;
 }
+
+.help-text {
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  line-height: 1.4;
+  margin-bottom: 0.5rem;
+  font-style: italic;
+  opacity: 0.8;
+}

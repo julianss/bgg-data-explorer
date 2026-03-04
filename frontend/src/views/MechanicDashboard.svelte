@@ -444,6 +444,7 @@
             on:change={() => renderPieChart()}>
         </div>
       </div>
+      <p class="help-text">How many games use each mechanic. Larger slices mean the mechanic appears in more games. Click a slice to see details and add it to the trend chart.</p>
       <div bind:this={pieEl} style="width: 100%; height: 400px;"></div>
     </div>
 
@@ -512,6 +513,7 @@
   <div class="card">
     <div class="flex-between" style="margin-bottom: 0.75rem;">
       <h2>Trends Over Time</h2>
+      <p class="help-text" style="margin: 0;">Track how the popularity of specific mechanics or categories has changed year by year. Use "% share" to compare relative popularity regardless of the growing number of games published each year.</p>
       <div style="display: flex; gap: 0.75rem; align-items: center;">
         <div class="toggle-group">
           <button class:active={mode === 'mechanics'} on:click={() => switchMode('mechanics')}>Mechanics</button>
@@ -562,7 +564,8 @@
 
   <!-- Co-occurrence heatmap -->
   <div class="card">
-    <h3 style="margin-bottom: 0.75rem;">Mechanic Co-occurrence Matrix</h3>
+    <h3 style="margin-bottom: 0.25rem;">Mechanic Co-occurrence Matrix</h3>
+    <p class="help-text">Shows how often pairs of mechanics appear together in the same game. Brighter cells mean two mechanics are frequently combined. Click any cell to see the actual games that use both mechanics.</p>
     <div class="filters">
       <div class="filter-group">
         <label>Year min</label>
@@ -610,6 +613,7 @@
   {#if overview}
     <div class="card">
       <h2 class="rising">Rising Mechanics (2020-2025 vs 2015-2019)</h2>
+      <p class="help-text">Mechanics that are being used in a larger share of new games compared to previous years. A higher percentage means the mechanic is becoming more popular among game designers. Click any card to add it to the trend chart above.</p>
       <div class="mover-cards">
         {#each overview.rising as mover}
           <div class="mover-card" on:click={() => addToTrendChart(mover)}>
@@ -621,6 +625,7 @@
     </div>
     <div class="card">
       <h2 class="falling">Declining Mechanics</h2>
+      <p class="help-text">Mechanics that are appearing in a smaller share of new games compared to previous years. This doesn't mean they're bad — just that designers are using them less often in recent titles.</p>
       <div class="mover-cards">
         {#each overview.falling as mover}
           <div class="mover-card" on:click={() => addToTrendChart(mover)}>
