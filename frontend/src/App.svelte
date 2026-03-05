@@ -39,11 +39,13 @@
   </nav>
 </header>
 
-{#if activeTab === 'dashboard'}
+<div class:hidden={activeTab !== 'dashboard'}>
   <MechanicDashboard />
-{:else if activeTab === 'opportunity'}
+</div>
+
+<div class:hidden={activeTab !== 'opportunity'}>
   <MarketOpportunity />
-{/if}
+</div>
 
 <div class:hidden={activeTab !== 'about'}>
   <About />
