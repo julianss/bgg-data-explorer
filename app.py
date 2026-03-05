@@ -97,9 +97,13 @@ def build_game_filter(prefix="g"):
 def api_mechanics():
     db = get_db()
     rows = db.execute("""
-        SELECT m.id, m.name, COUNT(gm.game_id) as game_count
+        SELECT m.id, m.name, COUNT(gm.game_id) as game_count,
+               ROUND(AVG(g.average), 2) as avg_rating,
+               ROUND(AVG(g.weight), 2) as avg_weight,
+               ROUND(AVG(g.playing_time), 0) as avg_playtime
         FROM mechanics m
         JOIN game_mechanics gm ON gm.mechanic_id = m.id
+        JOIN games g ON g.id = gm.game_id
         GROUP BY m.id
         ORDER BY game_count DESC
     """).fetchall()

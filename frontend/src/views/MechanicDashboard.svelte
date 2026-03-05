@@ -47,6 +47,7 @@
   let pieEl
   let pieChart
   let pieN = 15
+  let pieSortMetric = 'game_count' // 'game_count' | 'avg_rating' | 'avg_weight' | 'avg_playtime'
 
   // mechanic details state
   let selectedMechanicId = ''
@@ -56,6 +57,19 @@
   let miniChart
   let mechSearchText = ''
   let mechDropdownOpen = false
+
+  // Rank maps: mechanic id -> rank (1-based) for each metric
+  let ranks = { game_count: {}, avg_rating: {}, avg_weight: {}, avg_playtime: {} }
+
+  function computeRanks() {
+    for (const key of ['game_count', 'avg_rating', 'avg_weight', 'avg_playtime']) {
+      const sorted = [...mechanics].sort((a, b) => (b[key] || 0) - (a[key] || 0))
+      const map = {}
+      sorted.forEach((m, i) => map[m.id] = i + 1)
+      ranks[key] = map
+    }
+    ranks = ranks // trigger reactivity
+  }
 
   $: filteredMechanics = mechSearchText
     ? mechanics.filter(m => m.name.toLowerCase().includes(mechSearchText.toLowerCase()))
@@ -87,6 +101,7 @@
       ])
       overview = ov
       mechanics = mechs
+      computeRanks()
       categories = cats
       ranges = r
       coData = cooc
@@ -102,7 +117,7 @@
       loading = false
       await tick()
       renderTrendChart()
-      renderPieChart()
+      renderBarChart()
       renderHeatmap()
     }
   })
@@ -214,59 +229,84 @@
     renderTrendChart()
   }
 
-  // --- Pie chart ---
+  // --- Bar chart ---
 
-  function renderPieChart() {
+  const metricLabels = {
+    game_count: 'Games',
+    avg_rating: 'Avg Rating',
+    avg_weight: 'Avg Complexity',
+    avg_playtime: 'Avg Playtime'
+  }
+
+  const metricUnits = {
+    game_count: ' games',
+    avg_rating: '',
+    avg_weight: '/5',
+    avg_playtime: ' min'
+  }
+
+  // sorted mechanics list for the scrollable pane
+  $: sortedMechanics = [...mechanics].sort((a, b) => (b[pieSortMetric] || 0) - (a[pieSortMetric] || 0))
+
+  function renderBarChart() {
     if (!pieEl || !mechanics.length) return
 
     if (!pieChart) {
       pieChart = echarts.init(pieEl, 'dark')
-      pieChart.on('click', handlePieClick)
+      pieChart.on('click', handleBarClick)
       window.addEventListener('resize', () => pieChart?.resize())
     }
 
-    const topN = mechanics.slice(0, pieN)
-    const otherCount = mechanics.slice(pieN).reduce((s, m) => s + m.game_count, 0)
-    const pieData = topN.map(m => ({ name: m.name, value: m.game_count }))
-    if (otherCount > 0) pieData.push({ name: 'Other', value: otherCount })
+    const sorted = [...mechanics].sort((a, b) => (b[pieSortMetric] || 0) - (a[pieSortMetric] || 0))
+    const topN = sorted.slice(0, pieN)
+    const unit = metricUnits[pieSortMetric]
+    const names = topN.map(m => m.name).reverse()
+    const values = topN.map(m => m[pieSortMetric] || 0).reverse()
 
     pieChart.setOption({
       tooltip: {
-        trigger: 'item',
-        formatter: (p) => `${p.name}: ${p.value.toLocaleString()} games (${p.percent}%)`
+        trigger: 'axis',
+        axisPointer: { type: 'shadow' },
+        formatter: (params) => {
+          const p = params[0]
+          const val = pieSortMetric === 'game_count' ? p.value.toLocaleString() : p.value
+          return `${p.name}: ${val}${unit}`
+        }
       },
-      legend: {
-        type: 'scroll',
-        orient: 'vertical',
-        right: 10,
-        top: 20,
-        bottom: 20,
-        textStyle: { color: '#aaa', fontSize: 11 }
+      grid: { left: 140, right: 30, top: 10, bottom: 20 },
+      xAxis: {
+        type: 'value',
+        axisLabel: { color: '#aaa' }
+      },
+      yAxis: {
+        type: 'category',
+        data: names,
+        axisLabel: { color: '#aaa', fontSize: 11 }
       },
       series: [{
-        type: 'pie',
-        radius: ['30%', '65%'],
-        center: ['35%', '50%'],
-        avoidLabelOverlap: true,
-        itemStyle: { borderRadius: 4, borderColor: '#1a1a2e', borderWidth: 2 },
-        label: { show: false },
-        emphasis: {
-          label: { show: true, fontSize: 13, fontWeight: 'bold', color: '#fff' }
-        },
-        data: pieData
+        type: 'bar',
+        data: values,
+        itemStyle: { color: '#e94560', borderRadius: [0, 4, 4, 0] },
+        emphasis: { itemStyle: { color: '#ff6b81' } }
       }]
     }, true)
     pieChart.resize()
   }
 
-  function handlePieClick(params) {
-    if (!params.name || params.name === 'Other') return
+  function handleBarClick(params) {
+    if (!params.name) return
     const mech = mechanics.find(m => m.name === params.name)
     if (mech) {
       selectedMechanicId = mech.id
       mechSearchText = mech.name
       loadMechanicStats()
     }
+  }
+
+  function selectMechanicFromList(mech) {
+    selectedMechanicId = mech.id
+    mechSearchText = mech.name
+    loadMechanicStats()
   }
 
   // --- Mechanic details ---
@@ -458,15 +498,30 @@
   <div class="two-col">
     <div class="card">
       <div class="card-header">
-        <h3>Mechanic Popularity Share</h3>
+        <h3>Top Mechanics By</h3>
         <div class="filter-group" style="margin-left: auto;">
           <label>Top N</label>
           <input type="number" bind:value={pieN} min="5" max="50" style="width: 60px;"
-            on:change={() => renderPieChart()}>
+            on:change={() => renderBarChart()}>
         </div>
       </div>
-      <p class="help-text">How many games use each mechanic. Larger slices mean the mechanic appears in more games. Click a slice to see its details.</p>
-      <div bind:this={pieEl} style="width: 100%; height: 400px;"></div>
+      <div class="toggle-group" style="margin-bottom: 0.5rem;">
+        {#each Object.entries(metricLabels) as [key, label]}
+          <button class:active={pieSortMetric === key} on:click={() => { pieSortMetric = key; renderBarChart() }}>{label}</button>
+        {/each}
+      </div>
+      <p class="help-text">Top mechanics ranked by the selected metric. Click a bar to see its details.</p>
+      <div bind:this={pieEl} style="width: 100%; height: {Math.max(300, pieN * 24)}px;"></div>
+      <h4 style="margin: 0.75rem 0 0.25rem; color: var(--text-dim);">All {mechanics.length} Mechanics</h4>
+      <div class="ranked-list">
+        {#each sortedMechanics as mech, i}
+          <button class="ranked-item" class:active={String(mech.id) === String(selectedMechanicId)} on:click={() => selectMechanicFromList(mech)}>
+            <span class="ranked-pos">#{i + 1}</span>
+            <span class="ranked-name">{mech.name}</span>
+            <span class="ranked-val">{pieSortMetric === 'game_count' ? mech[pieSortMetric].toLocaleString() : mech[pieSortMetric]}{metricUnits[pieSortMetric]}</span>
+          </button>
+        {/each}
+      </div>
     </div>
 
     <div class="card">
@@ -513,18 +568,22 @@
           <div class="stat-box" title="Total number of games that use this mechanic">
             <span class="stat-value">{mechStats.game_count.toLocaleString()}</span>
             <span class="stat-label">Games</span>
+            <span class="stat-rank">#{ranks.game_count[selectedMechanicId] || '?'}</span>
           </div>
           <div class="stat-box" title="Average user rating (out of 10) across all games with this mechanic">
             <span class="stat-value">{mechStats.avg_rating}</span>
             <span class="stat-label">Avg Rating</span>
+            <span class="stat-rank">#{ranks.avg_rating[selectedMechanicId] || '?'}</span>
           </div>
           <div class="stat-box" title="Average complexity on a 1-5 scale, rated by BGG users based on how difficult the game is to understand and play">
             <span class="stat-value">{mechStats.avg_weight}</span>
             <span class="stat-label">Avg Complexity</span>
+            <span class="stat-rank">#{ranks.avg_weight[selectedMechanicId] || '?'}</span>
           </div>
           <div class="stat-box" title="Average playing time in minutes across all games with this mechanic">
             <span class="stat-value">{mechStats.avg_playtime} min</span>
             <span class="stat-label">Avg Playtime</span>
+            <span class="stat-rank">#{ranks.avg_playtime[selectedMechanicId] || '?'}</span>
           </div>
         </div>
         {#if mechStats.description}
