@@ -27,21 +27,17 @@
 
 <header>
   <h1>BGG Data Explorer</h1>
-  <a href="https://boardgamegeek.com" target="_blank" rel="noopener">
-    <img src="{import.meta.env.BASE_URL}bgg-logo.png" alt="Powered by BoardGameGeek" class="bgg-logo" />
-  </a>
+  <nav class="tabs">
+    {#each tabs as tab}
+      <button
+        class:active={activeTab === tab.id}
+        on:click={() => activeTab = tab.id}
+      >
+        {tab.label}
+      </button>
+    {/each}
+  </nav>
 </header>
-
-<div class="tabs">
-  {#each tabs as tab}
-    <button
-      class:active={activeTab === tab.id}
-      on:click={() => activeTab = tab.id}
-    >
-      {tab.label}
-    </button>
-  {/each}
-</div>
 
 {#if activeTab === 'dashboard'}
   <MechanicDashboard />
@@ -54,8 +50,11 @@
 </div>
 
 <footer>
+  <a href="https://boardgamegeek.com" target="_blank" rel="noopener" class="bgg-logo-link">
+    <img src="{import.meta.env.BASE_URL}bgg-logo.png" alt="Powered by BoardGameGeek" class="bgg-logo" />
+  </a>
   {#if snapshotDate}
     <div class="data-notice">Data based on a BGG snapshot from {snapshotDate} — not live data.</div>
   {/if}
-  Created by <a href="https://solojulian.dev" target="_blank" rel="noopener">Julian</a> &amp; Claude · <a href="https://github.com/julianss/bgg-data-explorer" target="_blank" rel="noopener">GitHub</a>
+  <div>Created by <a href="https://solojulian.dev" target="_blank" rel="noopener">Julian</a> &amp; Claude · <a href="https://github.com/julianss/bgg-data-explorer" target="_blank" rel="noopener">GitHub</a></div>
 </footer>

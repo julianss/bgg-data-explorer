@@ -18,33 +18,34 @@ body {
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 #app {
   max-width: 1400px;
   margin: 0 auto;
   padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
 
-h1 { font-size: 1.5rem; font-weight: 600; }
+h1 { font-size: 1.5rem; font-weight: 700; font-family: 'Orbitron', sans-serif; letter-spacing: 0.02em; }
 h2 { font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem; }
 
 .tabs {
   display: flex;
   gap: 0;
-  border-bottom: 2px solid var(--border);
-  margin-bottom: 1.5rem;
 }
 
 .tabs button {
   background: none;
   border: none;
   color: var(--text-dim);
-  padding: 0.75rem 1.5rem;
+  padding: 0.4rem 1rem;
   cursor: pointer;
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   border-bottom: 2px solid transparent;
-  margin-bottom: -2px;
   transition: all 0.2s;
 }
 
@@ -307,19 +308,49 @@ a:hover { text-decoration: underline; }
 header {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  gap: 1.5rem;
+  margin: -1rem calc(-50vw + 50%) 1.5rem;
+  padding: 0.75rem calc(50vw - 50% + 1rem);
+  background: linear-gradient(to bottom, #252547, #1e1e3a);
+  border-bottom: 2px solid var(--border);
 }
 
 header h1 {
+  flex-shrink: 0;
+  color: var(--text);
+}
+
+header .tabs {
   flex: 1;
+  align-self: center;
+}
+
+header .tabs button {
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+header .tabs button:hover {
+  color: var(--text);
+}
+
+header .tabs button.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
 }
 
 footer {
   text-align: center;
-  padding: 2rem 0 1rem;
-  color: var(--text-dim);
+  padding: 1.5rem calc(50vw - 50% + 1rem);
+  margin: auto calc(-50vw + 50%) 0;
+  padding-top: 2rem;
+  background: #e8e6f0;
+  color: #444;
   font-size: 0.8rem;
+}
+
+footer a {
+  color: #b5243a;
 }
 
 .data-notice {
@@ -327,14 +358,22 @@ footer {
   font-style: italic;
 }
 
+.bgg-logo-link {
+  display: inline-block;
+  margin-bottom: 0.5rem;
+}
+
+.bgg-logo-link:hover {
+  text-decoration: none;
+}
+
 .bgg-logo {
-  height: 28px;
-  opacity: 0.7;
+  height: 32px;
   transition: opacity 0.2s;
 }
 
-.bgg-logo:hover {
-  opacity: 1;
+.bgg-logo-link:hover .bgg-logo {
+  opacity: 0.7;
 }
 
 .two-col {
