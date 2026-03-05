@@ -107,7 +107,49 @@ def api_mechanics():
         GROUP BY m.id
         ORDER BY game_count DESC
     """).fetchall()
-    return jsonify(rows_to_dicts(rows))
+    result = rows_to_dicts(rows)
+
+    # Compute median and mode for each mechanic
+    from statistics import median, mode as stats_mode
+    raw = db.execute("""
+        SELECT gm.mechanic_id, g.average, g.weight, g.playing_time
+        FROM game_mechanics gm
+        JOIN games g ON g.id = gm.game_id
+    """).fetchall()
+    per_mech = {}
+    for r in raw:
+        mid = r[0]
+        if mid not in per_mech:
+            per_mech[mid] = {"ratings": [], "weights": [], "playtimes": []}
+        if r[1] is not None:
+            per_mech[mid]["ratings"].append(r[1])
+        if r[2] is not None:
+            per_mech[mid]["weights"].append(r[2])
+        if r[3] is not None:
+            per_mech[mid]["playtimes"].append(r[3])
+
+    def safe_median(vals):
+        return round(median(vals), 2) if vals else None
+
+    def safe_mode(vals, ndigits=1):
+        if not vals:
+            return None
+        rounded = [round(v, ndigits) for v in vals]
+        try:
+            return stats_mode(rounded)
+        except Exception:
+            return None
+
+    for m in result:
+        data = per_mech.get(m["id"], {"ratings": [], "weights": [], "playtimes": []})
+        m["median_rating"] = safe_median(data["ratings"])
+        m["median_weight"] = safe_median(data["weights"])
+        m["median_playtime"] = safe_median(data["playtimes"])
+        m["mode_rating"] = safe_mode(data["ratings"], 1)
+        m["mode_weight"] = safe_mode(data["weights"], 1)
+        m["mode_playtime"] = safe_mode(data["playtimes"], 0)
+
+    return jsonify(result)
 
 
 @app.route("/api/categories")

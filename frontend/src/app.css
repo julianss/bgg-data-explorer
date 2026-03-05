@@ -107,6 +107,17 @@ button.btn {
 button.btn:hover { opacity: 0.85; }
 button.btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
+.link-btn {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0.25rem 0;
+  margin-top: 0.5rem;
+}
+.link-btn:hover { text-decoration: underline; }
+
 button.btn-secondary {
   background: var(--surface2);
 }
@@ -547,7 +558,7 @@ footer a {
 }
 
 .ranked-list {
-  max-height: 300px;
+  max-height: 600px;
   overflow-y: auto;
 }
 
@@ -564,10 +575,27 @@ footer a {
   font-size: 0.8rem;
   cursor: pointer;
   text-align: left;
+  position: relative;
+  overflow: hidden;
+}
+
+.ranked-bar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: var(--accent);
+  opacity: 0.12;
+  pointer-events: none;
+  transition: width 0.3s ease;
 }
 
 .ranked-item:hover {
   background: var(--surface2);
+}
+
+.ranked-item:hover .ranked-bar {
+  opacity: 0.2;
 }
 
 .ranked-item.active {
@@ -575,20 +603,49 @@ footer a {
   color: var(--accent);
 }
 
+.ranked-item.active .ranked-bar {
+  opacity: 0.22;
+}
+
 .ranked-pos {
   color: var(--text-dim);
   min-width: 2rem;
   font-size: 0.75rem;
+  position: relative;
 }
 
 .ranked-name {
   flex: 1;
+  position: relative;
 }
 
 .ranked-val {
   color: var(--accent);
   font-weight: 600;
   font-size: 0.75rem;
+  min-width: 4rem;
+  text-align: right;
+  position: relative;
+}
+
+.ranked-extra {
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  min-width: 4rem;
+  text-align: right;
+  position: relative;
+}
+
+.ranked-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--surface2);
 }
 
 .top-games-list {

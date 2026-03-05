@@ -43,11 +43,9 @@
   let drillTitle = ''
   let drillLoading = false
 
-  // pie chart state
-  let pieEl
-  let pieChart
-  let pieN = 15
+  // metric sort state
   let pieSortMetric = 'game_count' // 'game_count' | 'avg_rating' | 'avg_weight' | 'avg_playtime'
+  let pieSortAsc = false
 
   // mechanic details state
   let selectedMechanicId = ''
@@ -117,7 +115,6 @@
       loading = false
       await tick()
       renderTrendChart()
-      renderBarChart()
       renderHeatmap()
     }
   })
@@ -245,63 +242,33 @@
     avg_playtime: ' min'
   }
 
+  const metricDescriptions = {
+    game_count: 'Total number of games that use this mechanic. Higher means more widely adopted by game designers.',
+    avg_rating: 'Average user rating (0–10) across all games with this mechanic. Higher means games with this mechanic tend to be better received.',
+    avg_weight: 'Average complexity (1–5 scale) across all games with this mechanic. Higher means games tend to be heavier and more complex.',
+    avg_playtime: 'Average playing time in minutes across all games with this mechanic. Higher means games tend to run longer.'
+  }
+
+  const metricMedianKey = {
+    avg_rating: 'median_rating',
+    avg_weight: 'median_weight',
+    avg_playtime: 'median_playtime'
+  }
+
+  const metricModeKey = {
+    avg_rating: 'mode_rating',
+    avg_weight: 'mode_weight',
+    avg_playtime: 'mode_playtime'
+  }
+
   // sorted mechanics list for the scrollable pane
-  $: sortedMechanics = [...mechanics].sort((a, b) => (b[pieSortMetric] || 0) - (a[pieSortMetric] || 0))
-
-  function renderBarChart() {
-    if (!pieEl || !mechanics.length) return
-
-    if (!pieChart) {
-      pieChart = echarts.init(pieEl, 'dark')
-      pieChart.on('click', handleBarClick)
-      window.addEventListener('resize', () => pieChart?.resize())
-    }
-
-    const sorted = [...mechanics].sort((a, b) => (b[pieSortMetric] || 0) - (a[pieSortMetric] || 0))
-    const topN = sorted.slice(0, pieN)
-    const unit = metricUnits[pieSortMetric]
-    const names = topN.map(m => m.name).reverse()
-    const values = topN.map(m => m[pieSortMetric] || 0).reverse()
-
-    pieChart.setOption({
-      tooltip: {
-        trigger: 'axis',
-        axisPointer: { type: 'shadow' },
-        formatter: (params) => {
-          const p = params[0]
-          const val = pieSortMetric === 'game_count' ? p.value.toLocaleString() : p.value
-          return `${p.name}: ${val}${unit}`
-        }
-      },
-      grid: { left: 140, right: 30, top: 10, bottom: 20 },
-      xAxis: {
-        type: 'value',
-        axisLabel: { color: '#aaa' }
-      },
-      yAxis: {
-        type: 'category',
-        data: names,
-        axisLabel: { color: '#aaa', fontSize: 11 }
-      },
-      series: [{
-        type: 'bar',
-        data: values,
-        itemStyle: { color: '#e94560', borderRadius: [0, 4, 4, 0] },
-        emphasis: { itemStyle: { color: '#ff6b81' } }
-      }]
-    }, true)
-    pieChart.resize()
-  }
-
-  function handleBarClick(params) {
-    if (!params.name) return
-    const mech = mechanics.find(m => m.name === params.name)
-    if (mech) {
-      selectedMechanicId = mech.id
-      mechSearchText = mech.name
-      loadMechanicStats()
-    }
-  }
+  $: sortedMechanics = [...mechanics].sort((a, b) => pieSortAsc
+    ? (a[pieSortMetric] || 0) - (b[pieSortMetric] || 0)
+    : (b[pieSortMetric] || 0) - (a[pieSortMetric] || 0)
+  )
+  $: maxMetricVal = mechanics.reduce((mx, m) => Math.max(mx, m[pieSortMetric] || 0), 0) || 1
+  $: minMetricVal = pieSortMetric === 'game_count' ? 0 : mechanics.reduce((mn, m) => Math.min(mn, m[pieSortMetric] || 0), Infinity)
+  $: metricRange = maxMetricVal - minMetricVal || 1
 
   function selectMechanicFromList(mech) {
     selectedMechanicId = mech.id
@@ -497,28 +464,38 @@
   <!-- Pie chart + Mechanic details row -->
   <div class="two-col">
     <div class="card">
-      <div class="card-header">
-        <h3>Top Mechanics By</h3>
+      <h3 style="margin-bottom: 0.25rem;">All {mechanics.length} Mechanics</h3>
+      <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+        <label style="color: var(--text-dim); font-size: 0.8rem;">Sort by</label>
         <div class="toggle-group" style="margin: 0;">
           {#each Object.entries(metricLabels) as [key, label]}
-            <button class:active={pieSortMetric === key} on:click={() => { pieSortMetric = key; renderBarChart() }}>{label}</button>
+            <button class:active={pieSortMetric === key} on:click={() => { pieSortMetric = key }}>{label}</button>
           {/each}
-        </div>
-        <div class="filter-group" style="margin-left: auto;">
-          <label>Top N</label>
-          <input type="number" bind:value={pieN} min="5" max="50" style="width: 60px;"
-            on:change={() => renderBarChart()}>
+          <button class:active={!pieSortAsc} on:click={() => { pieSortAsc = false }} title="Highest first">&#9660;</button>
+          <button class:active={pieSortAsc} on:click={() => { pieSortAsc = true }} title="Lowest first">&#9650;</button>
         </div>
       </div>
-      <p class="help-text">Top mechanics ranked by the selected metric. Click a bar to see its details.</p>
-      <div bind:this={pieEl} style="width: 100%; height: {Math.max(300, pieN * 24)}px;"></div>
-      <h4 style="margin: 0.75rem 0 0.25rem; color: var(--text-dim);">All {mechanics.length} Mechanics</h4>
+      <p class="help-text">{metricDescriptions[pieSortMetric]}</p>
+      {#if pieSortMetric !== 'game_count'}
+        <div class="ranked-header">
+          <span class="ranked-pos"></span>
+          <span class="ranked-name"></span>
+          <span class="ranked-val">{pieSortMetric === 'game_count' ? '' : 'Mean'}</span>
+          <span class="ranked-extra">Median</span>
+          <span class="ranked-extra">Mode</span>
+        </div>
+      {/if}
       <div class="ranked-list">
         {#each sortedMechanics as mech, i}
           <button class="ranked-item" class:active={String(mech.id) === String(selectedMechanicId)} on:click={() => selectMechanicFromList(mech)}>
+            <div class="ranked-bar" style="width: {(((mech[pieSortMetric] || 0) - minMetricVal) / metricRange * 100).toFixed(1)}%"></div>
             <span class="ranked-pos">#{i + 1}</span>
             <span class="ranked-name">{mech.name}</span>
             <span class="ranked-val">{pieSortMetric === 'game_count' ? mech[pieSortMetric].toLocaleString() : mech[pieSortMetric]}{metricUnits[pieSortMetric]}</span>
+            {#if pieSortMetric !== 'game_count'}
+              <span class="ranked-extra">{mech[metricMedianKey[pieSortMetric]] ?? '–'}{metricUnits[pieSortMetric]}</span>
+              <span class="ranked-extra">{mech[metricModeKey[pieSortMetric]] ?? '–'}{metricUnits[pieSortMetric]}</span>
+            {/if}
           </button>
         {/each}
       </div>
@@ -593,7 +570,7 @@
 
         <h4 style="margin: 0.75rem 0 0.25rem; color: var(--text-dim);">Games per Year</h4>
         <div bind:this={miniChartEl} style="width: 100%; height: 150px;"></div>
-        <button class="btn" style="margin-top: 0.5rem;" on:click={addSelectedMechanicToTrend}>Add to trend graph</button>
+        <button class="link-btn" on:click={addSelectedMechanicToTrend}>+ Add to "Trends Over Time"</button>
 
         <h4 style="margin: 0.75rem 0 0.25rem; color: var(--text-dim);">Top Co-occurring Mechanics</h4>
         <div class="co-mechs">
