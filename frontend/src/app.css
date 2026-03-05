@@ -672,3 +672,52 @@ footer a {
   font-style: italic;
   opacity: 0.8;
 }
+
+.desc-search-modal {
+  max-width: 700px;
+}
+
+.desc-search-results {
+  max-height: 55vh;
+  overflow-y: auto;
+}
+
+.desc-search-result {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  padding: 0.6rem 0.5rem;
+  cursor: pointer;
+  color: var(--text);
+}
+
+.desc-search-result:hover {
+  background: var(--surface2);
+}
+
+.desc-result-header {
+  margin-bottom: 0.3rem;
+  font-size: 0.9rem;
+}
+
+.desc-result-header .dim {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  margin-left: 0.3rem;
+}
+
+.desc-result-snippet {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.desc-result-snippet mark {
+  background: #e9456066;
+  color: var(--text);
+  padding: 0 2px;
+  border-radius: 2px;
+}

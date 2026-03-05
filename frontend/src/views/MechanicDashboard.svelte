@@ -56,6 +56,18 @@
   let mechSearchText = ''
   let mechDropdownOpen = false
 
+  // description search state (game descriptions)
+  let descSearchOpen = false
+  let descSearchQuery = ''
+  let descSearchResults = null
+  let descSearchLoading = false
+
+  // mechanic description search state
+  let mechDescSearchOpen = false
+  let mechDescSearchQuery = ''
+  let mechDescSearchResults = null
+  let mechDescSearchLoading = false
+
   // Rank maps: mechanic id -> rank (1-based) for each metric
   let ranks = { game_count: {}, avg_rating: {}, avg_weight: {}, avg_playtime: {} }
 
@@ -309,6 +321,81 @@
     if (mech) addToTrendChart(mech)
   }
 
+  async function searchMechDescriptions() {
+    if (!mechDescSearchQuery.trim()) return
+    mechDescSearchLoading = true
+    try {
+      mechDescSearchResults = await fetchJSON('/api/mechanics-search-by-description', { q: mechDescSearchQuery.trim() })
+    } catch (e) {
+      error = e.message
+      mechDescSearchResults = []
+    } finally {
+      mechDescSearchLoading = false
+    }
+  }
+
+  function handleMechDescKeydown(e) {
+    if (e.key === 'Enter') searchMechDescriptions()
+  }
+
+  function selectMechFromDescSearch(mech) {
+    selectedMechanicId = mech.id
+    mechSearchText = mech.name
+    mechDescSearchOpen = false
+    mechDescSearchQuery = ''
+    mechDescSearchResults = null
+    handleMechanicDropdownChange()
+  }
+
+  function closeMechDescSearch() {
+    mechDescSearchOpen = false
+    mechDescSearchQuery = ''
+    mechDescSearchResults = null
+  }
+
+  async function searchDescriptions() {
+    if (!descSearchQuery.trim() || !selectedMechanicId) return
+    descSearchLoading = true
+    try {
+      descSearchResults = await fetchJSON(`/api/mechanic-search-descriptions/${selectedMechanicId}`, { q: descSearchQuery.trim() })
+    } catch (e) {
+      error = e.message
+      descSearchResults = []
+    } finally {
+      descSearchLoading = false
+    }
+  }
+
+  function handleDescSearchKeydown(e) {
+    if (e.key === 'Enter') searchDescriptions()
+  }
+
+  function selectGameFromSearch(game) {
+    descSearchOpen = false
+    descSearchQuery = ''
+    descSearchResults = null
+    // Load this game's mechanic details - find the mechanic and select it
+    // The game was found under the current mechanic, so just scroll to top
+  }
+
+  function closeDescSearch() {
+    descSearchOpen = false
+    descSearchQuery = ''
+    descSearchResults = null
+  }
+
+  function highlightWords(text, query) {
+    if (!query || !text) return escapeHtml(text || '')
+    const escaped = escapeHtml(text)
+    const words = query.trim().split(/\s+/)
+    const pattern = new RegExp('(' + words.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')', 'gi')
+    return escaped.replace(pattern, '<mark>$1</mark>')
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+  }
+
   function handleCoMechClick(cm) {
     const mech = mechanics.find(m => m.name === cm.name)
     if (mech) addToTrendChart(mech)
@@ -506,7 +593,10 @@
         <h3>Mechanic Details</h3>
       </div>
       <div class="filter-group" style="margin-bottom: 0.75rem;">
-        <label>Select a mechanic</label>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+          <label>Select a mechanic</label>
+          <button class="link-btn" on:click={() => { mechDescSearchOpen = true; mechDescSearchResults = null; mechDescSearchQuery = '' }}>&#128269; Search by description</button>
+        </div>
         <div class="searchable-select">
           <input
             type="text"
@@ -579,7 +669,10 @@
           {/each}
         </div>
 
-        <h4 style="margin: 0.75rem 0 0.25rem; color: var(--text-dim);">Top Games</h4>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin: 0.75rem 0 0.25rem;">
+          <h4 style="margin: 0; color: var(--text-dim);">Top Games</h4>
+          <button class="link-btn" on:click={() => { descSearchOpen = true; descSearchResults = null; descSearchQuery = '' }} title="Search game descriptions">&#128269; Search by Description</button>
+        </div>
         <div class="top-games-list">
           {#each mechStats.top_games as game}
             <div class="top-game">
@@ -733,6 +826,94 @@
       <div bind:this={heatmapEl} style="width: 100%; height: {Math.max(500, (coData.mechanics?.length || 25) * 24)}px;"></div>
     {/if}
   </div>
+
+  <!-- Mechanic description search modal -->
+  {#if mechDescSearchOpen}
+    <div class="modal-backdrop" on:click={closeMechDescSearch} on:keydown={(e) => e.key === 'Escape' && closeMechDescSearch()}>
+      <div class="modal desc-search-modal" on:click|stopPropagation>
+        <button class="close" on:click={closeMechDescSearch}>x</button>
+        <h2>Search Mechanics by Description</h2>
+        <p style="color: var(--text-dim); margin-bottom: 0.75rem;">Find a mechanic by searching keywords in its description</p>
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+          <input
+            type="text"
+            placeholder="e.g. cards hand play..."
+            bind:value={mechDescSearchQuery}
+            on:keydown={handleMechDescKeydown}
+            on:input={() => { if (!mechDescSearchQuery.trim()) mechDescSearchResults = null }}
+            style="flex: 1; padding: 0.5rem 0.75rem;"
+            autofocus
+          />
+          <button class="btn" on:click={searchMechDescriptions} disabled={mechDescSearchLoading || !mechDescSearchQuery.trim()}>
+            {mechDescSearchLoading ? 'Searching...' : 'Search'}
+          </button>
+        </div>
+        {#if mechDescSearchLoading}
+          <div class="loading">Searching...</div>
+        {:else if mechDescSearchResults !== null}
+          <p style="color: var(--text-dim); margin-bottom: 0.5rem;">{mechDescSearchResults.length} result{mechDescSearchResults.length !== 1 ? 's' : ''}</p>
+          <div class="desc-search-results">
+            {#each mechDescSearchResults as mech}
+              <button class="desc-search-result" on:click={() => selectMechFromDescSearch(mech)}>
+                <div class="desc-result-header">
+                  <strong>{mech.name}</strong>
+                  <span class="dim">({mech.game_count} games)</span>
+                </div>
+                <div class="desc-result-snippet">{@html highlightWords(decodeEntities(mech.snippet), mechDescSearchQuery)}</div>
+              </button>
+            {/each}
+            {#if mechDescSearchResults.length === 0}
+              <p style="color: var(--text-dim); padding: 1rem; text-align: center;">No mechanics found matching your search.</p>
+            {/if}
+          </div>
+        {/if}
+      </div>
+    </div>
+  {/if}
+
+  <!-- Description search modal -->
+  {#if descSearchOpen}
+    <div class="modal-backdrop" on:click={closeDescSearch} on:keydown={(e) => e.key === 'Escape' && closeDescSearch()}>
+      <div class="modal desc-search-modal" on:click|stopPropagation>
+        <button class="close" on:click={closeDescSearch}>x</button>
+        <h2>Search Descriptions</h2>
+        <p style="color: var(--text-dim); margin-bottom: 0.75rem;">Search game descriptions within <strong>{mechSearchText}</strong></p>
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+          <input
+            type="text"
+            placeholder="Enter search words..."
+            bind:value={descSearchQuery}
+            on:keydown={handleDescSearchKeydown}
+            on:input={() => { if (!descSearchQuery.trim()) descSearchResults = null }}
+            style="flex: 1; padding: 0.5rem 0.75rem;"
+            autofocus
+          />
+          <button class="btn" on:click={searchDescriptions} disabled={descSearchLoading || !descSearchQuery.trim()}>
+            {descSearchLoading ? 'Searching...' : 'Search'}
+          </button>
+        </div>
+        {#if descSearchLoading}
+          <div class="loading">Searching...</div>
+        {:else if descSearchResults !== null}
+          <p style="color: var(--text-dim); margin-bottom: 0.5rem;">{descSearchResults.length} result{descSearchResults.length !== 1 ? 's' : ''}</p>
+          <div class="desc-search-results">
+            {#each descSearchResults as game}
+              <button class="desc-search-result" on:click={() => { closeDescSearch(); }}>
+                <div class="desc-result-header">
+                  <a href="https://boardgamegeek.com/boardgame/{game.id}" target="_blank" on:click|stopPropagation>{game.name}</a>
+                  <span class="dim">({game.year_published || '?'}) — {game.average?.toFixed(1) || '?'}</span>
+                </div>
+                <div class="desc-result-snippet">{@html highlightWords(decodeEntities(game.snippet), descSearchQuery)}</div>
+              </button>
+            {/each}
+            {#if descSearchResults.length === 0}
+              <p style="color: var(--text-dim); padding: 1rem; text-align: center;">No games found matching your search.</p>
+            {/if}
+          </div>
+        {/if}
+      </div>
+    </div>
+  {/if}
 
   <!-- Drill-down modal -->
   {#if drillGames !== null}

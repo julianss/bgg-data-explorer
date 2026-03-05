@@ -335,6 +335,104 @@ def api_mechanic_stats(mechanic_id):
     })
 
 
+@app.route("/api/mechanics-search-by-description")
+def api_mechanics_search_by_description():
+    db = get_db()
+    q = request.args.get("q", "").strip()
+    if not q:
+        return jsonify([])
+
+    words = q.split()
+    clauses = []
+    params = []
+    for word in words:
+        clauses.append("m.summary LIKE ?")
+        params.append(f"%{word}%")
+
+    where = " AND ".join(clauses)
+    rows = db.execute(f"""
+        SELECT m.id, m.name, m.summary,
+               COUNT(gm.game_id) as game_count
+        FROM mechanics m
+        JOIN game_mechanics gm ON gm.mechanic_id = m.id
+        WHERE {where}
+        GROUP BY m.id
+        ORDER BY game_count DESC
+    """, params).fetchall()
+
+    import re
+    pattern = re.compile("(" + "|".join(re.escape(w) for w in words) + ")", re.IGNORECASE)
+    results = []
+    for r in rows:
+        summary = r["summary"] or ""
+        match = pattern.search(summary)
+        if match:
+            start = max(0, match.start() - 40)
+            end = min(len(summary), match.end() + 160)
+            snippet = ("..." if start > 0 else "") + summary[start:end] + ("..." if end < len(summary) else "")
+        else:
+            snippet = summary[:200]
+        results.append({
+            "id": r["id"],
+            "name": r["name"],
+            "game_count": r["game_count"],
+            "snippet": snippet,
+        })
+
+    return jsonify(results)
+
+
+@app.route("/api/mechanic-search-descriptions/<int:mechanic_id>")
+def api_mechanic_search_descriptions(mechanic_id):
+    db = get_db()
+    q = request.args.get("q", "").strip()
+    if not q:
+        return jsonify([])
+
+    # Split query into individual words for highlighting
+    words = q.split()
+    # Search using LIKE for each word (all must match)
+    clauses = []
+    params = [mechanic_id]
+    for word in words:
+        clauses.append("g.description LIKE ?")
+        params.append(f"%{word}%")
+
+    where = " AND ".join(clauses)
+    rows = db.execute(f"""
+        SELECT g.id, g.name, g.year_published, g.average, g.description
+        FROM games g
+        JOIN game_mechanics gm ON gm.game_id = g.id
+        WHERE gm.mechanic_id = ? AND {where}
+        ORDER BY g.bayes_average DESC
+        LIMIT 50
+    """, params).fetchall()
+
+    import re
+    results = []
+    for r in rows:
+        desc = r["description"] or ""
+        # Find a snippet around the first match
+        pattern = re.compile("(" + "|".join(re.escape(w) for w in words) + ")", re.IGNORECASE)
+        match = pattern.search(desc)
+        if match:
+            start = max(0, match.start() - 80)
+            end = min(len(desc), match.end() + 200)
+            snippet = ("..." if start > 0 else "") + desc[start:end] + ("..." if end < len(desc) else "")
+        else:
+            snippet = desc[:280] + ("..." if len(desc) > 280 else "")
+
+        results.append({
+            "id": r["id"],
+            "name": r["name"],
+            "year_published": r["year_published"],
+            "average": r["average"],
+            "snippet": snippet,
+        })
+
+    return jsonify(results)
+
+
 @app.route("/api/mechanic-pair-games")
 def api_mechanic_pair_games():
     db = get_db()
