@@ -58,5 +58,6 @@
   {#if snapshotDate}
     <div class="data-notice">Data based on a BGG snapshot from {snapshotDate} — not live data.</div>
   {/if}
+  <div class="tech-stack">Built with <a href="https://svelte.dev" target="_blank" rel="noopener">Svelte</a>, <a href="https://flask.palletsprojects.com" target="_blank" rel="noopener">Flask</a>, and <a href="https://echarts.apache.org" target="_blank" rel="noopener">Apache ECharts</a></div>
   <div>Created by <a href="https://solojulian.dev" target="_blank" rel="noopener">Julian</a> &amp; Claude · <a href="https://github.com/julianss/bgg-data-explorer" target="_blank" rel="noopener">GitHub</a></div>
 </footer>
