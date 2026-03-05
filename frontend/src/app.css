@@ -352,9 +352,8 @@ header .tabs button.active {
 
 footer {
   text-align: center;
-  padding: 1.5rem calc(50vw - 50% + 1rem);
-  margin: auto calc(-50vw + 50%) 0;
-  padding-top: 2rem;
+  padding: 2rem calc(50vw - 50% + 1rem) 1.5rem;
+  margin: auto calc(-50vw + 50%) -1rem;
   background: #e8e6f0;
   color: #444;
   font-size: 0.8rem;
