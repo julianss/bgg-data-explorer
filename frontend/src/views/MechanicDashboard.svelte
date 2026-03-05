@@ -232,7 +232,7 @@
   // --- Bar chart ---
 
   const metricLabels = {
-    game_count: 'Games',
+    game_count: '# of Games',
     avg_rating: 'Avg Rating',
     avg_weight: 'Avg Complexity',
     avg_playtime: 'Avg Playtime'
@@ -499,16 +499,16 @@
     <div class="card">
       <div class="card-header">
         <h3>Top Mechanics By</h3>
+        <div class="toggle-group" style="margin: 0;">
+          {#each Object.entries(metricLabels) as [key, label]}
+            <button class:active={pieSortMetric === key} on:click={() => { pieSortMetric = key; renderBarChart() }}>{label}</button>
+          {/each}
+        </div>
         <div class="filter-group" style="margin-left: auto;">
           <label>Top N</label>
           <input type="number" bind:value={pieN} min="5" max="50" style="width: 60px;"
             on:change={() => renderBarChart()}>
         </div>
-      </div>
-      <div class="toggle-group" style="margin-bottom: 0.5rem;">
-        {#each Object.entries(metricLabels) as [key, label]}
-          <button class:active={pieSortMetric === key} on:click={() => { pieSortMetric = key; renderBarChart() }}>{label}</button>
-        {/each}
       </div>
       <p class="help-text">Top mechanics ranked by the selected metric. Click a bar to see its details.</p>
       <div bind:this={pieEl} style="width: 100%; height: {Math.max(300, pieN * 24)}px;"></div>

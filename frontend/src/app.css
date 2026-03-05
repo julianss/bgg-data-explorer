@@ -390,6 +390,7 @@ footer a {
 .card-header {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 0.75rem;
   margin-bottom: 0.5rem;
 }
