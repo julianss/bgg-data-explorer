@@ -350,6 +350,58 @@ header .tabs button.active {
   border-bottom-color: var(--accent);
 }
 
+header .info-btn {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 0.25rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+header .info-btn:hover {
+  color: var(--text);
+}
+
+.about-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.about-modal {
+  position: relative;
+  background: var(--bg);
+  border-radius: 12px;
+  padding: 2rem;
+  max-width: 700px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.about-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--text-dim);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.about-close:hover {
+  color: var(--text);
+}
+
 footer {
   text-align: center;
   padding: 2rem calc(50vw - 50% + 1rem) 1.5rem;

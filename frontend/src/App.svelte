@@ -7,11 +7,11 @@
 
   let activeTab = 'dashboard'
   let snapshotDate = ''
+  let showAbout = false
 
   const tabs = [
     { id: 'dashboard', label: 'Mechanics Explorer' },
     { id: 'opportunity', label: 'Market Opportunities' },
-    { id: 'about', label: 'About' },
   ]
 
   onMount(async () => {
@@ -37,6 +37,13 @@
       </button>
     {/each}
   </nav>
+  <button class="info-btn" on:click={() => showAbout = !showAbout} title="About">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" y1="16" x2="12" y2="12"/>
+      <line x1="12" y1="8" x2="12.01" y2="8"/>
+    </svg>
+  </button>
 </header>
 
 <div class:hidden={activeTab !== 'dashboard'}>
@@ -47,9 +54,16 @@
   <MarketOpportunity />
 </div>
 
-<div class:hidden={activeTab !== 'about'}>
-  <About />
-</div>
+{#if showAbout}
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <div class="about-overlay" on:click={() => showAbout = false}>
+    <div class="about-modal" on:click|stopPropagation>
+      <button class="about-close" on:click={() => showAbout = false}>&times;</button>
+      <About />
+    </div>
+  </div>
+{/if}
 
 <footer>
   <a href="https://boardgamegeek.com" target="_blank" rel="noopener" class="bgg-logo-link">

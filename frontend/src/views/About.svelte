@@ -1,4 +1,4 @@
-<div class="about card">
+<div class="about">
   <h2>About this tool</h2>
 
   <p>
@@ -19,6 +19,13 @@
   </p>
 
   <p>
+    <strong>Note:</strong> This doesn't include every game on BGG — only the
+    ~30,000 games that have a BGG rank (i.e., enough user ratings to be ranked).
+    Unranked, obscure, or very new games that haven't received enough ratings
+    won't appear here.
+  </p>
+
+  <p>
     Sharing it here in case it's useful (or at least entertaining to click around) for my
     classmates and anyone else nerding out about board game design.
   </p>
@@ -28,8 +35,6 @@
 
 <style>
   .about {
-    max-width: 700px;
-    margin: 2rem auto;
     line-height: 1.7;
     font-size: 1.05rem;
   }
