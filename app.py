@@ -667,6 +667,112 @@ def api_trends_overview():
     return jsonify({"rising": rising, "falling": falling})
 
 
+# ---------- game search ----------
+
+@app.route("/api/search-games")
+def api_search_games():
+    db = get_db()
+    import re
+
+    title = request.args.get("title", "").strip()
+    description = request.args.get("description", "").strip()
+    mechanic_ids = request.args.get("mechanic_ids", "").strip()
+    category_ids = request.args.get("category_ids", "").strip()
+    page = int_param("page", 1)
+    per_page = 50
+
+    # Need at least one filter
+    if not title and not description and not mechanic_ids and not category_ids:
+        return jsonify({"results": [], "total": 0, "page": 1, "pages": 0})
+
+    joins = []
+    clauses = []
+    params = []
+
+    if mechanic_ids:
+        mids = [int(x) for x in mechanic_ids.split(",") if x.strip().isdigit()]
+        if mids:
+            for i, mid in enumerate(mids):
+                alias = f"gm_f{i}"
+                joins.append(f"JOIN game_mechanics {alias} ON {alias}.game_id = g.id AND {alias}.mechanic_id = ?")
+                params.append(mid)
+
+    if category_ids:
+        cids = [int(x) for x in category_ids.split(",") if x.strip().isdigit()]
+        if cids:
+            for i, cid in enumerate(cids):
+                alias = f"gc_f{i}"
+                joins.append(f"JOIN game_categories {alias} ON {alias}.game_id = g.id AND {alias}.category_id = ?")
+                params.append(cid)
+
+    if title:
+        clauses.append("g.name LIKE ?")
+        params.append(f"%{title}%")
+
+    desc_words = []
+    if description:
+        desc_words = description.split()
+        for word in desc_words:
+            clauses.append("g.description LIKE ?")
+            params.append(f"%{word}%")
+
+    join_sql = "\n        ".join(joins)
+    where_sql = " AND ".join(clauses)
+    if where_sql:
+        where_sql = "WHERE " + where_sql
+
+    # Count total
+    count_sql = f"""
+        SELECT COUNT(DISTINCT g.id)
+        FROM games g
+        {join_sql}
+        {where_sql}
+    """
+    total = db.execute(count_sql, params).fetchone()[0]
+    pages = math.ceil(total / per_page) if total > 0 else 0
+
+    # Fetch page
+    offset = (page - 1) * per_page
+    rows = db.execute(f"""
+        SELECT DISTINCT g.id, g.name, g.year_published, g.average, g.weight,
+               g.users_rated, g.playing_time, g.description
+        FROM games g
+        {join_sql}
+        {where_sql}
+        ORDER BY g.bayes_average DESC
+        LIMIT ? OFFSET ?
+    """, params + [per_page, offset]).fetchall()
+
+    # Build snippets for description search
+    results = []
+    pattern = None
+    if desc_words:
+        pattern = re.compile("(" + "|".join(re.escape(w) for w in desc_words) + ")", re.IGNORECASE)
+
+    for r in rows:
+        item = {
+            "id": r["id"],
+            "name": r["name"],
+            "year_published": r["year_published"],
+            "average": r["average"],
+            "weight": r["weight"],
+            "users_rated": r["users_rated"],
+            "playing_time": r["playing_time"],
+        }
+        if desc_words and r["description"]:
+            desc = r["description"]
+            match = pattern.search(desc)
+            if match:
+                start = max(0, match.start() - 80)
+                end = min(len(desc), match.end() + 200)
+                item["snippet"] = ("..." if start > 0 else "") + desc[start:end] + ("..." if end < len(desc) else "")
+            else:
+                item["snippet"] = desc[:280] + ("..." if len(desc) > 280 else "")
+        results.append(item)
+
+    return jsonify({"results": results, "total": total, "page": page, "pages": pages})
+
+
 # ---------- static file serving ----------
 
 @app.route("/")

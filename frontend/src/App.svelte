@@ -4,6 +4,7 @@
   import MechanicDashboard from './views/MechanicDashboard.svelte'
   import MarketOpportunity from './views/MarketOpportunity.svelte'
   import About from './views/About.svelte'
+  import GameSearch from './views/GameSearch.svelte'
 
   let activeTab = 'dashboard'
   let snapshotDate = ''
@@ -12,6 +13,7 @@
   const tabs = [
     { id: 'dashboard', label: 'Mechanics Explorer' },
     { id: 'opportunity', label: 'Market Opportunities' },
+    { id: 'search', label: 'Game Search' },
   ]
 
   onMount(async () => {
@@ -52,6 +54,10 @@
 
 <div class:hidden={activeTab !== 'opportunity'}>
   <MarketOpportunity />
+</div>
+
+<div class:hidden={activeTab !== 'search'}>
+  <GameSearch />
 </div>
 
 {#if showAbout}
